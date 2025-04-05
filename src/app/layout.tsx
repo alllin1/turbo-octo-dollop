@@ -1,11 +1,5 @@
-import { fontClasses } from '@/lib/fonts';
-import { ThemeProvider } from '@/providers/theme-provider';
-import './globals.css';
-
-export const metadata = {
-  title: 'Luxury Raffle Platform',
-  description: 'Win incredible luxury prizes with our premium raffle competitions',
-};
+import { inter, playfair } from '@/lib/fonts';
+import '@/styles/animations.css';
 
 export default function RootLayout({
   children,
@@ -13,11 +7,14 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={fontClasses}>
-      <body className="min-h-screen bg-primary text-primary antialiased">
-        <ThemeProvider>
-          {children}
-        </ThemeProvider>
+    <html lang="en" className={`${inter.variable} ${playfair.variable}`}>
+      <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Luxury Raffle Platform</title>
+        <meta name="description" content="Win luxury prizes with our premium raffle platform" />
+      </head>
+      <body>
+        {children}
       </body>
     </html>
   );

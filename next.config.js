@@ -1,7 +1,11 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  /* config options here */
-  async redirects() {
+  reactStrictMode: true,
+  swcMinify: true,
+  images: {
+    domains: ['images.unsplash.com'],
+  },
+  redirects: async () => {
     return [
       {
         source: '/',
