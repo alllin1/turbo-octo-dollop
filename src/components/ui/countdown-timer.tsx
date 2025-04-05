@@ -1,74 +1,100 @@
 'use client'
 
-import React from 'react'
-import { cn } from '@/lib/utils'
+import React, { useState, useEffect } from 'react'
 
 interface CountdownTimerProps {
-  endDate: string | Date
-  className?: string
+  endDate: string
   onComplete?: () => void
+  compact?: boolean
 }
 
-export function CountdownTimer({ endDate, className, onComplete }: CountdownTimerProps) {
-  const [days, setDays] = React.useState(0)
-  const [hours, setHours] = React.useState(0)
-  const [minutes, setMinutes] = React.useState(0)
-  const [seconds, setSeconds] = React.useState(0)
-  
-  React.useEffect(() => {
-    const interval = setInterval(() => {
-      const end = new Date(endDate).getTime()
-      const now = new Date().getTime()
-      const distance = end - now
-      
-      if (distance < 0) {
-        clearInterval(interval)
-        setDays(0)
-        setHours(0)
-        setMinutes(0)
-        setSeconds(0)
-        
-        if (onComplete) {
-          onComplete()
-        }
-        return
+export function CountdownTimer({
+  endDate,
+  onComplete,
+  compact = false
+}: CountdownTimerProps) {
+  const calculateTimeLeft = () => {
+    const difference = new Date(endDate).getTime() - new Date().getTime()
+    
+    if (difference <= 0) {
+      if (onComplete) onComplete()
+      return {
+        days: 0,
+        hours: 0,
+        minutes: 0,
+        seconds: 0,
+        isComplete: true
       }
+    }
+    
+    return {
+      days: Math.floor(difference / (1000 * 60 * 60 * 24)),
+      hours: Math.floor((difference / (1000 * 60 * 60)) % 24),
+      minutes: Math.floor((difference / 1000 / 60) % 60),
+      seconds: Math.floor((difference / 1000) % 60),
+      isComplete: false
+    }
+  }
+  
+  const [timeLeft, setTimeLeft] = useState(calculateTimeLeft())
+  const [isUrgent, setIsUrgent] = useState(false)
+  
+  useEffect(() => {
+    const timer = setInterval(() => {
+      const updatedTimeLeft = calculateTimeLeft()
+      setTimeLeft(updatedTimeLeft)
       
-      // Calculate time units
-      setDays(Math.floor(distance / (1000 * 60 * 60 * 24)))
-      setHours(Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)))
-      setMinutes(Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60)))
-      setSeconds(Math.floor((distance % (1000 * 60)) / 1000))
+      // Check if less than 24 hours remaining
+      const totalHours = updatedTimeLeft.days * 24 + updatedTimeLeft.hours
+      setIsUrgent(totalHours < 24 && !updatedTimeLeft.isComplete)
+      
+      if (updatedTimeLeft.isComplete) {
+        clearInterval(timer)
+      }
     }, 1000)
     
-    return () => clearInterval(interval)
-  }, [endDate, onComplete])
+    return () => clearInterval(timer)
+  }, [endDate])
+  
+  if (compact) {
+    return (
+      <div className={`flex items-center space-x-1 font-medium ${isUrgent ? 'text-red-600 animate-pulse' : ''}`}>
+        <span>{timeLeft.days}d</span>
+        <span>{timeLeft.hours}h</span>
+        <span>{timeLeft.minutes}m</span>
+        <span>{timeLeft.seconds}s</span>
+      </div>
+    )
+  }
   
   return (
-    <div className={cn("flex justify-between", className)}>
-      <div className="text-center">
-        <div className="bg-gray-100 rounded-md p-2 min-w-[3rem]">
-          <span className="text-xl font-bold">{days}</span>
-        </div>
-        <div className="text-xs mt-1">Days</div>
+    <div className="countdown-timer">
+      <div className={`countdown-unit ${isUrgent ? 'bg-red-100 dark:bg-red-900' : ''}`}>
+        <span className={`countdown-value ${isUrgent ? 'text-red-600 dark:text-red-400' : ''}`}>
+          {timeLeft.days}
+        </span>
+        <span className="countdown-label">Days</span>
       </div>
-      <div className="text-center">
-        <div className="bg-gray-100 rounded-md p-2 min-w-[3rem]">
-          <span className="text-xl font-bold">{hours}</span>
-        </div>
-        <div className="text-xs mt-1">Hours</div>
+      
+      <div className={`countdown-unit ${isUrgent ? 'bg-red-100 dark:bg-red-900' : ''}`}>
+        <span className={`countdown-value ${isUrgent ? 'text-red-600 dark:text-red-400' : ''}`}>
+          {timeLeft.hours}
+        </span>
+        <span className="countdown-label">Hours</span>
       </div>
-      <div className="text-center">
-        <div className="bg-gray-100 rounded-md p-2 min-w-[3rem]">
-          <span className="text-xl font-bold">{minutes}</span>
-        </div>
-        <div className="text-xs mt-1">Mins</div>
+      
+      <div className={`countdown-unit ${isUrgent ? 'bg-red-100 dark:bg-red-900' : ''}`}>
+        <span className={`countdown-value ${isUrgent ? 'text-red-600 dark:text-red-400' : ''}`}>
+          {timeLeft.minutes}
+        </span>
+        <span className="countdown-label">Mins</span>
       </div>
-      <div className="text-center">
-        <div className="bg-gray-100 rounded-md p-2 min-w-[3rem]">
-          <span className="text-xl font-bold">{seconds}</span>
-        </div>
-        <div className="text-xs mt-1">Secs</div>
+      
+      <div className={`countdown-unit ${isUrgent ? 'bg-red-100 dark:bg-red-900' : ''}`}>
+        <span className={`countdown-value ${isUrgent ? 'text-red-600 dark:text-red-400' : ''}`}>
+          {timeLeft.seconds}
+        </span>
+        <span className="countdown-label">Secs</span>
       </div>
     </div>
   )

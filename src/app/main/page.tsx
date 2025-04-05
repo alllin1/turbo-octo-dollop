@@ -1,7 +1,9 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState } from 'react'
+import { CompetitionCard } from '@/components/ui/competition-card'
 import { useRouter } from 'next/navigation'
+import { SwipeContainer } from '@/components/ui/swipe-container'
 
 export default function HomePage() {
   const router = useRouter()
@@ -45,7 +47,7 @@ export default function HomePage() {
   ]
   
   // Simulate loading state
-  useEffect(() => {
+  React.useEffect(() => {
     const timer = setTimeout(() => {
       setIsLoading(false)
     }, 1000)
@@ -53,55 +55,24 @@ export default function HomePage() {
     return () => clearTimeout(timer)
   }, [])
   
-  // Auto-rotate featured competitions on mobile
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setActiveIndex((current) => (current + 1) % competitions.length)
-    }, 5000)
-    
-    return () => clearInterval(interval)
-  }, [competitions.length])
-  
   const handleEnterClick = (id: string) => {
     router.push(`/main/competitions/${id}`)
   }
   
-  // Handle swipe for featured competitions
-  const [touchStart, setTouchStart] = useState(0)
-  const [touchEnd, setTouchEnd] = useState(0)
-  
-  const handleTouchStart = (e: React.TouchEvent) => {
-    setTouchStart(e.targetTouches[0].clientX)
+  // Handle carousel navigation
+  const handlePrevSlide = () => {
+    setActiveIndex((current) => (current - 1 + competitions.length) % competitions.length)
   }
   
-  const handleTouchMove = (e: React.TouchEvent) => {
-    setTouchEnd(e.targetTouches[0].clientX)
-  }
-  
-  const handleTouchEnd = () => {
-    if (!touchStart || !touchEnd) return
-    
-    const distance = touchStart - touchEnd
-    const isLeftSwipe = distance > 50
-    const isRightSwipe = distance < -50
-    
-    if (isLeftSwipe) {
-      setActiveIndex((current) => (current + 1) % competitions.length)
-    }
-    
-    if (isRightSwipe) {
-      setActiveIndex((current) => (current - 1 + competitions.length) % competitions.length)
-    }
-    
-    setTouchEnd(0)
-    setTouchStart(0)
+  const handleNextSlide = () => {
+    setActiveIndex((current) => (current + 1) % competitions.length)
   }
   
   // Render skeleton loading state
   if (isLoading) {
     return (
       <div className="container mx-auto py-8 animate-fade-in">
-        <div className="skeleton h-10 w-3/4 mb-8"></div>
+        <div className="skeleton h-10 w-3/4 mb-8 rounded-md"></div>
         
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {[...Array(4)].map((_, i) => (
@@ -121,153 +92,136 @@ export default function HomePage() {
   }
   
   return (
-    <div className="container mx-auto py-8">
-      <h1 className="text-3xl font-bold mb-8">Featured Competitions</h1>
+    <div className="animate-fade-in">
+      <div className="bg-gradient-to-r from-primary-dark to-primary py-16 mb-12">
+        <div className="container mx-auto text-center text-white">
+          <h1 className="text-4xl md:text-5xl font-bold mb-4">Win Your Dream Prizes</h1>
+          <p className="text-xl mb-8 max-w-2xl mx-auto">Enter our premium competitions for your chance to win luxury cars, dream holidays, and life-changing cash prizes.</p>
+          <button className="btn btn-accent">Browse All Competitions</button>
+        </div>
+      </div>
       
-      {/* Featured competition carousel for mobile */}
-      <div className="md:hidden mb-8">
-        <div 
-          className="relative overflow-hidden"
-          onTouchStart={handleTouchStart}
-          onTouchMove={handleTouchMove}
-          onTouchEnd={handleTouchEnd}
-        >
-          <div 
-            className="flex transition-transform duration-300 ease-in-out"
-            style={{ transform: `translateX(-${activeIndex * 100}%)` }}
-          >
-            {competitions.map((competition) => (
-              <div key={competition.id} className="w-full flex-shrink-0">
-                <div className="card mx-2">
-                  <div className="relative aspect-[16/9]">
-                    <img
-                      src={competition.imageUrl}
-                      alt={competition.title}
-                      className="w-full h-full object-cover"
-                      loading="lazy"
-                    />
-                    <div className="absolute top-2 right-2 bg-red-600 text-white text-sm font-bold px-2 py-1 rounded-full">
-                      £{competition.ticketPrice.toFixed(2)}
+      <div className="container mx-auto py-8">
+        <div className="featured-section">
+          <h2 className="featured-heading text-3xl font-bold mb-8">Featured Competitions</h2>
+          
+          {/* Mobile Carousel */}
+          <div className="md:hidden mb-8">
+            <div className="carousel">
+              <SwipeContainer
+                onSwipeLeft={handleNextSlide}
+                onSwipeRight={handlePrevSlide}
+                className="w-full"
+              >
+                <div 
+                  className="carousel-inner"
+                  style={{ transform: `translateX(-${activeIndex * 100}%)` }}
+                >
+                  {competitions.map((competition) => (
+                    <div key={competition.id} className="carousel-item">
+                      <CompetitionCard
+                        title={competition.title}
+                        imageUrl={competition.imageUrl}
+                        ticketPrice={competition.ticketPrice}
+                        percentageSold={competition.percentageSold}
+                        endDate={competition.endDate}
+                        onEnterClick={() => handleEnterClick(competition.id)}
+                      />
                     </div>
-                  </div>
-                  <div className="p-4">
-                    <h3 className="font-bold text-lg mb-2">{competition.title}</h3>
-                    <button 
-                      onClick={() => handleEnterClick(competition.id)}
-                      className="btn btn-primary w-full"
-                    >
-                      Enter Now
-                    </button>
-                  </div>
+                  ))}
                 </div>
+              </SwipeContainer>
+              
+              <div className="carousel-indicators">
+                {competitions.map((_, i) => (
+                  <button
+                    key={i}
+                    className={`carousel-indicator ${i === activeIndex ? 'active' : ''}`}
+                    onClick={() => setActiveIndex(i)}
+                    aria-label={`Go to slide ${i + 1}`}
+                  />
+                ))}
               </div>
+            </div>
+          </div>
+          
+          {/* Desktop Grid */}
+          <div className="hidden md:grid grid-cols-2 lg:grid-cols-4 gap-6">
+            {competitions.map((competition) => (
+              <CompetitionCard
+                key={competition.id}
+                title={competition.title}
+                imageUrl={competition.imageUrl}
+                ticketPrice={competition.ticketPrice}
+                percentageSold={competition.percentageSold}
+                endDate={competition.endDate}
+                onEnterClick={() => handleEnterClick(competition.id)}
+              />
             ))}
           </div>
           
-          {/* Carousel indicators */}
-          <div className="flex justify-center mt-4">
-            {competitions.map((_, i) => (
-              <button
-                key={i}
-                className={`w-2 h-2 mx-1 rounded-full ${i === activeIndex ? 'bg-red-600' : 'bg-gray-300'}`}
-                onClick={() => setActiveIndex(i)}
-                aria-label={`Go to slide ${i + 1}`}
-              />
-            ))}
+          <div className="text-center mt-8">
+            <button className="btn btn-outline">
+              View All Competitions
+            </button>
           </div>
         </div>
-      </div>
-      
-      {/* Regular grid for desktop */}
-      <div className="hidden md:grid grid-cols-2 lg:grid-cols-4 gap-6">
-        {competitions.map((competition) => (
-          <div key={competition.id} className="card">
-            <div className="relative aspect-[16/9]">
-              <img
-                src={competition.imageUrl}
-                alt={competition.title}
-                className="w-full h-full object-cover"
-                loading="lazy"
-              />
-              <div className="absolute top-2 right-2 bg-red-600 text-white text-sm font-bold px-2 py-1 rounded-full">
-                £{competition.ticketPrice.toFixed(2)}
-              </div>
+        
+        <div className="promo-section">
+          <div className="promo-grid">
+            <div className="promo-card promo-card-winners">
+              <h2 className="promo-title">Winners Gallery</h2>
+              <p className="promo-text">See our latest lucky winners and their prizes</p>
+              <button className="btn btn-accent">
+                View Winners
+              </button>
             </div>
-            <div className="p-4">
-              <h3 className="font-bold text-lg mb-2">{competition.title}</h3>
-              <button 
-                onClick={() => handleEnterClick(competition.id)}
-                className="btn btn-primary w-full"
-              >
-                Enter Now
+            
+            <div className="promo-card promo-card-instant">
+              <h2 className="promo-title">Instant Wins</h2>
+              <p className="promo-text">Try your luck with our instant win games</p>
+              <button className="btn btn-accent">
+                Play Now
+              </button>
+            </div>
+            
+            <div className="promo-card promo-card-bonus">
+              <h2 className="promo-title">Daily Bonus</h2>
+              <p className="promo-text">Login daily to claim your bonus rewards</p>
+              <button className="btn btn-accent">
+                Claim Bonus
               </button>
             </div>
           </div>
-        ))}
-      </div>
-      
-      {/* Horizontal scroll container for mobile */}
-      <div className="md:hidden mt-8">
-        <h2 className="text-xl font-bold mb-4">More Competitions</h2>
-        <div className="scroll-container">
-          {competitions.map((competition) => (
-            <div key={competition.id} className="scroll-item">
-              <div className="card h-full">
-                <div className="relative aspect-[16/9]">
-                  <img
-                    src={competition.imageUrl}
-                    alt={competition.title}
-                    className="w-full h-full object-cover"
-                    loading="lazy"
-                  />
-                  <div className="absolute top-2 right-2 bg-red-600 text-white text-sm font-bold px-2 py-1 rounded-full">
-                    £{competition.ticketPrice.toFixed(2)}
-                  </div>
-                </div>
-                <div className="p-4">
-                  <h3 className="font-bold text-lg mb-2 line-clamp-1">{competition.title}</h3>
-                  <button 
-                    onClick={() => handleEnterClick(competition.id)}
-                    className="btn btn-primary w-full"
-                  >
-                    Enter Now
-                  </button>
-                </div>
+        </div>
+        
+        <div className="mt-16">
+          <h2 className="featured-heading text-3xl font-bold mb-8">How It Works</h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="text-center">
+              <div className="bg-primary-light text-white rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
+                <span className="text-2xl font-bold">1</span>
               </div>
+              <h3 className="text-xl font-bold mb-2">Choose a Competition</h3>
+              <p>Browse our range of luxury prizes and select the competition you want to enter.</p>
             </div>
-          ))}
-        </div>
-      </div>
-      
-      <div className="mt-8 text-center hide-on-mobile">
-        <button className="btn btn-outline">
-          Load More Competitions
-        </button>
-      </div>
-      
-      <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-gradient-to-r from-red-600 to-red-800 text-white rounded-lg p-6 text-center">
-          <h2 className="text-xl font-bold mb-2">Winners Gallery</h2>
-          <p className="mb-4">See our latest lucky winners and their prizes</p>
-          <button className="bg-white text-red-600 font-bold py-2 px-4 rounded hover:bg-gray-100 touch-target">
-            View Winners
-          </button>
-        </div>
-        
-        <div className="bg-gradient-to-r from-orange-500 to-orange-700 text-white rounded-lg p-6 text-center">
-          <h2 className="text-xl font-bold mb-2">Instant Wins</h2>
-          <p className="mb-4">Try your luck with our instant win games</p>
-          <button className="bg-white text-orange-600 font-bold py-2 px-4 rounded hover:bg-gray-100 touch-target">
-            Play Now
-          </button>
-        </div>
-        
-        <div className="bg-gradient-to-r from-gray-700 to-gray-900 text-white rounded-lg p-6 text-center">
-          <h2 className="text-xl font-bold mb-2">Daily Bonus</h2>
-          <p className="mb-4">Login daily to claim your bonus rewards</p>
-          <button className="bg-white text-gray-800 font-bold py-2 px-4 rounded hover:bg-gray-100 touch-target">
-            Claim Bonus
-          </button>
+            
+            <div className="text-center">
+              <div className="bg-primary text-white rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
+                <span className="text-2xl font-bold">2</span>
+              </div>
+              <h3 className="text-xl font-bold mb-2">Purchase Tickets</h3>
+              <p>Buy your tickets securely online. The more tickets you buy, the higher your chances.</p>
+            </div>
+            
+            <div className="text-center">
+              <div className="bg-primary-dark text-white rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
+                <span className="text-2xl font-bold">3</span>
+              </div>
+              <h3 className="text-xl font-bold mb-2">Win Amazing Prizes</h3>
+              <p>Winners are drawn at random and notified immediately. Good luck!</p>
+            </div>
+          </div>
         </div>
       </div>
     </div>

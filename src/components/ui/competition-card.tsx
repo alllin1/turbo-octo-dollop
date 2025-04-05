@@ -40,53 +40,66 @@ export function CompetitionCard({
 
   return (
     <div 
-      className={`card transition-all duration-300 ${isTouching ? 'scale-98' : ''}`}
+      className={`card ${isTouching ? 'scale-98' : ''}`}
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
       onTouchCancel={handleTouchEnd}
     >
-      <div className="relative aspect-[16/9] overflow-hidden">
+      <div className="card-image-container">
         {isLoading && (
           <div className="absolute inset-0 skeleton"></div>
         )}
         <img
           src={imageUrl}
           alt={title}
-          className="w-full h-full object-cover transition-opacity duration-300"
+          className="card-image"
           style={{ opacity: isLoading ? 0 : 1 }}
           onLoad={handleImageLoad}
           loading="lazy"
         />
-        <div className="absolute top-2 right-2 bg-red-600 text-white text-sm font-bold px-2 py-1 rounded-full">
+        <div className="card-image-overlay"></div>
+        <div className="card-badge">
           £{ticketPrice.toFixed(2)}
         </div>
       </div>
       
-      <div className="p-4">
-        <h3 className="font-bold text-lg mb-2 line-clamp-2" title={title}>
+      <div className="card-content">
+        <h3 className="card-title" title={title}>
           {title}
         </h3>
         
-        <div className="mb-3">
-          <div className="flex justify-between text-sm mb-1">
+        <div className="card-price">
+          <span className="card-price-amount">£{ticketPrice.toFixed(2)}</span>
+          <span className="card-price-label">per ticket</span>
+        </div>
+        
+        <div className="card-progress">
+          <div className="card-progress-label">
             <span>{percentageSold}% Sold</span>
             <span>{100 - percentageSold}% Remaining</span>
           </div>
-          <ProgressBar percentage={percentageSold} />
+          <div className="card-progress-bar">
+            <div 
+              className="card-progress-fill" 
+              style={{ width: `${percentageSold}%` }}
+            ></div>
+          </div>
         </div>
         
-        <div className="mb-4">
-          <div className="text-sm mb-1">Competition ends in:</div>
+        <div className="card-timer">
+          <div className="card-timer-label">Competition ends in:</div>
           <CountdownTimer endDate={endDate} />
         </div>
         
-        <button 
-          onClick={onEnterClick}
-          className="btn btn-primary w-full touch-target"
-          aria-label={`Enter ${title} competition`}
-        >
-          Enter Now
-        </button>
+        <div className="card-actions">
+          <button 
+            onClick={onEnterClick}
+            className="btn btn-primary w-full"
+            aria-label={`Enter ${title} competition`}
+          >
+            Enter Now
+          </button>
+        </div>
       </div>
     </div>
   )
