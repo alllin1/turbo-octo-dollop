@@ -1,120 +1,162 @@
-'use client'
+import React from 'react';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 
-import React, { useState, useRef, useEffect } from 'react'
-import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+interface MobileNavigationProps {
+  className?: string;
+}
 
-export function MobileNavigation() {
-  const pathname = usePathname()
-  const [startX, setStartX] = useState<number | null>(null)
-  const [currentX, setCurrentX] = useState<number | null>(null)
-  const navRef = useRef<HTMLDivElement>(null)
-  const [isVisible, setIsVisible] = useState(true)
-  const [lastScrollY, setLastScrollY] = useState(0)
-  
-  const isActive = (path: string) => {
-    return pathname.startsWith(path) ? 'active' : ''
-  }
-  
-  // Handle scroll behavior - hide on scroll down, show on scroll up
-  useEffect(() => {
+const MobileNavigation: React.FC<MobileNavigationProps> = ({ className = '' }) => {
+  const pathname = usePathname();
+  const [isVisible, setIsVisible] = React.useState(true);
+  const [lastScrollY, setLastScrollY] = React.useState(0);
+
+  // Handle scroll to hide/show navigation
+  React.useEffect(() => {
     const handleScroll = () => {
-      const currentScrollY = window.scrollY
-      if (currentScrollY > lastScrollY + 10) {
-        setIsVisible(false)
-      } else if (currentScrollY < lastScrollY - 10) {
-        setIsVisible(true)
+      const currentScrollY = window.scrollY;
+      
+      // Show nav when scrolling up, hide when scrolling down
+      if (currentScrollY > lastScrollY && currentScrollY > 100) {
+        setIsVisible(false);
+      } else {
+        setIsVisible(true);
       }
-      setLastScrollY(currentScrollY)
-    }
+      
+      setLastScrollY(currentScrollY);
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [lastScrollY]);
+
+  // Handle swipe gestures
+  React.useEffect(() => {
+    let touchStartY = 0;
+    let touchEndY = 0;
     
-    window.addEventListener('scroll', handleScroll, { passive: true })
-    return () => window.removeEventListener('scroll', handleScroll)
-  }, [lastScrollY])
-  
-  // Touch event handlers for swipe gestures
-  const handleTouchStart = (e: React.TouchEvent) => {
-    setStartX(e.touches[0].clientX)
-  }
-  
-  const handleTouchMove = (e: React.TouchEvent) => {
-    if (startX === null) return
-    setCurrentX(e.touches[0].clientX)
-  }
-  
-  const handleTouchEnd = () => {
-    if (startX === null || currentX === null) return
+    const handleTouchStart = (e: TouchEvent) => {
+      touchStartY = e.touches[0].clientY;
+    };
     
-    const diff = startX - currentX
+    const handleTouchMove = (e: TouchEvent) => {
+      touchEndY = e.touches[0].clientY;
+    };
     
-    // Swipe threshold of 50px
-    if (Math.abs(diff) > 50) {
-      // Swipe left - show more options
-      if (diff > 0) {
-        // Could implement additional navigation features here
+    const handleTouchEnd = () => {
+      // Swipe down - show navigation
+      if (touchStartY < touchEndY && touchEndY - touchStartY > 50) {
+        setIsVisible(true);
       }
-      // Swipe right - go back
-      else {
-        window.history.back()
+      // Swipe up - hide navigation
+      else if (touchStartY > touchEndY && touchStartY - touchEndY > 50) {
+        setIsVisible(false);
       }
-    }
+    };
     
-    setStartX(null)
-    setCurrentX(null)
-  }
-  
+    window.addEventListener('touchstart', handleTouchStart);
+    window.addEventListener('touchmove', handleTouchMove);
+    window.addEventListener('touchend', handleTouchEnd);
+    
+    return () => {
+      window.removeEventListener('touchstart', handleTouchStart);
+      window.removeEventListener('touchmove', handleTouchMove);
+      window.removeEventListener('touchend', handleTouchEnd);
+    };
+  }, []);
+
   return (
     <div 
-      ref={navRef}
-      className={`mobile-nav ${isVisible ? 'translate-y-0' : 'translate-y-full'}`}
-      onTouchStart={handleTouchStart}
-      onTouchMove={handleTouchMove}
-      onTouchEnd={handleTouchEnd}
+      className={`
+        fixed bottom-0 left-0 right-0 z-50 
+        transform transition-transform duration-300 ease-in-out
+        ${isVisible ? 'translate-y-0' : 'translate-y-full'}
+        md:hidden
+        ${className}
+      `}
     >
-      <Link href="/main" className={isActive('/main')}>
-        <div className="touch-target">
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-          </svg>
-        </div>
-        <span>Home</span>
-      </Link>
-      
-      <Link href="/main/competitions" className={isActive('/main/competitions')}>
-        <div className="touch-target">
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5.5A2.5 2.5 0 109.5 8H12zm-7 4h14M5 12a2 2 0 110-4h14a2 2 0 110 4M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7" />
-          </svg>
-        </div>
-        <span>Prizes</span>
-      </Link>
-      
-      <Link href="/main/winners" className={isActive('/main/winners')}>
-        <div className="touch-target">
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
-          </svg>
-        </div>
-        <span>Winners</span>
-      </Link>
-      
-      <Link href="/main/cart" className={isActive('/main/cart')}>
-        <div className="touch-target">
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
-          </svg>
-        </div>
-        <span>Cart</span>
-      </Link>
-      
-      <Link href="/main/profile" className={isActive('/main/profile')}>
-        <div className="touch-target">
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-          </svg>
-        </div>
-        <span>Profile</span>
-      </Link>
+      <div className="bg-gradient-premium shadow-lg rounded-t-xl p-4">
+        <nav className="grid grid-cols-4 gap-2">
+          <NavItem 
+            href="/main" 
+            icon={<HomeIcon />} 
+            label="Home" 
+            isActive={pathname === '/main'} 
+          />
+          <NavItem 
+            href="/main/competitions" 
+            icon={<CompetitionsIcon />} 
+            label="Competitions" 
+            isActive={pathname.includes('/main/competitions')} 
+          />
+          <NavItem 
+            href="/main/winners" 
+            icon={<WinnersIcon />} 
+            label="Winners" 
+            isActive={pathname.includes('/main/winners')} 
+          />
+          <NavItem 
+            href="/auth/signin" 
+            icon={<ProfileIcon />} 
+            label="Account" 
+            isActive={pathname.includes('/auth')} 
+          />
+        </nav>
+      </div>
     </div>
-  )
+  );
+};
+
+interface NavItemProps {
+  href: string;
+  icon: React.ReactNode;
+  label: string;
+  isActive: boolean;
 }
+
+const NavItem: React.FC<NavItemProps> = ({ href, icon, label, isActive }) => {
+  return (
+    <Link 
+      href={href}
+      className={`
+        flex flex-col items-center justify-center p-2 rounded-lg
+        transition-all duration-300
+        active:scale-95
+        ${isActive 
+          ? 'text-accent' 
+          : 'text-white hover:text-accent'
+        }
+      `}
+    >
+      <div className="text-2xl mb-1">{icon}</div>
+      <span className="text-xs font-accent font-medium">{label}</span>
+    </Link>
+  );
+};
+
+// Icons
+const HomeIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
+    <path strokeLinecap="round" strokeLinejoin="round" d="m2.25 12 8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" />
+  </svg>
+);
+
+const CompetitionsIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
+    <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 18.75h-9m9 0a3 3 0 0 1 3 3h-15a3 3 0 0 1 3-3m9 0v-3.375c0-.621-.503-1.125-1.125-1.125h-.871M7.5 18.75v-3.375c0-.621.504-1.125 1.125-1.125h.872m5.007 0H9.497m5.007 0a7.454 7.454 0 0 1-.982-3.172M9.497 14.25a7.454 7.454 0 0 0 .981-3.172M5.25 4.236c-.982.143-1.954.317-2.916.52A6.003 6.003 0 0 0 7.73 9.728M5.25 4.236V4.5c0 2.108.966 3.99 2.48 5.228M5.25 4.236V2.721C7.456 2.41 9.71 2.25 12 2.25c2.291 0 4.545.16 6.75.47v1.516M7.73 9.728a6.726 6.726 0 0 0 2.748 1.35m8.272-6.842V4.5c0 2.108-.966 3.99-2.48 5.228m2.48-5.492a46.32 46.32 0 0 1 2.916.52 6.003 6.003 0 0 1-5.395 4.972m0 0a6.726 6.726 0 0 1-2.749 1.35m0 0a6.772 6.772 0 0 1-3.044 0" />
+  </svg>
+);
+
+const WinnersIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
+    <path strokeLinecap="round" strokeLinejoin="round" d="M11.48 3.499a.562.562 0 0 1 1.04 0l2.125 5.111a.563.563 0 0 0 .475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 0 0-.182.557l1.285 5.385a.562.562 0 0 1-.84.61l-4.725-2.885a.562.562 0 0 0-.586 0L6.982 20.54a.562.562 0 0 1-.84-.61l1.285-5.386a.562.562 0 0 0-.182-.557l-4.204-3.602a.562.562 0 0 1 .321-.988l5.518-.442a.563.563 0 0 0 .475-.345L11.48 3.5Z" />
+  </svg>
+);
+
+const ProfileIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
+    <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
+  </svg>
+);
+
+export default MobileNavigation;
