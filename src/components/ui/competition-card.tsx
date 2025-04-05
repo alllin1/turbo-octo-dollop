@@ -1,11 +1,10 @@
 'use client'
 
-import React from 'react'
-import { cn } from '@/lib/utils'
-import { formatCurrency } from '@/lib/utils'
-import { calculateTimeRemaining } from '@/lib/utils'
+import { useState } from 'react'
+import { ProgressBar } from './progress-bar'
+import { CountdownTimer } from './countdown-timer'
 
-interface CompetitionCardProps extends React.HTMLAttributes<HTMLDivElement> {
+interface CompetitionCardProps {
   title: string
   imageUrl: string
   ticketPrice: number
@@ -20,74 +19,73 @@ export function CompetitionCard({
   ticketPrice,
   percentageSold,
   endDate,
-  onEnterClick,
-  className,
-  ...props
+  onEnterClick
 }: CompetitionCardProps) {
-  const [timeRemaining, setTimeRemaining] = React.useState(calculateTimeRemaining(endDate))
+  const [isLoading, setIsLoading] = useState(true)
+  const [isTouching, setIsTouching] = useState(false)
   
-  React.useEffect(() => {
-    const timer = setInterval(() => {
-      setTimeRemaining(calculateTimeRemaining(endDate))
-    }, 1000)
-    
-    return () => clearInterval(timer)
-  }, [endDate])
+  // Handle image loading
+  const handleImageLoad = () => {
+    setIsLoading(false)
+  }
   
+  // Touch event handlers for better mobile interaction
+  const handleTouchStart = () => {
+    setIsTouching(true)
+  }
+  
+  const handleTouchEnd = () => {
+    setIsTouching(false)
+  }
+
   return (
     <div 
-      className={cn(
-        "bg-white rounded-lg shadow-lg overflow-hidden transition-transform hover:scale-[1.02]",
-        className
-      )}
-      {...props}
+      className={`card transition-all duration-300 ${isTouching ? 'scale-98' : ''}`}
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
+      onTouchCancel={handleTouchEnd}
     >
-      <div className="relative h-48 overflow-hidden">
-        <img 
-          src={imageUrl} 
-          alt={title} 
-          className="w-full h-full object-cover"
+      <div className="relative aspect-[16/9] overflow-hidden">
+        {isLoading && (
+          <div className="absolute inset-0 skeleton"></div>
+        )}
+        <img
+          src={imageUrl}
+          alt={title}
+          className="w-full h-full object-cover transition-opacity duration-300"
+          style={{ opacity: isLoading ? 0 : 1 }}
+          onLoad={handleImageLoad}
+          loading="lazy"
         />
+        <div className="absolute top-2 right-2 bg-red-600 text-white text-sm font-bold px-2 py-1 rounded-full">
+          £{ticketPrice.toFixed(2)}
+        </div>
       </div>
       
       <div className="p-4">
-        <h3 className="text-lg font-bold mb-2 truncate">{title}</h3>
-        <p className="text-gray-700 mb-2">{formatCurrency(ticketPrice)} per ticket</p>
+        <h3 className="font-bold text-lg mb-2 line-clamp-2" title={title}>
+          {title}
+        </h3>
         
-        {/* Progress bar */}
-        <div className="w-full bg-gray-200 rounded-full h-2.5 mb-2">
-          <div 
-            className="bg-gradient-to-r from-red-600 to-orange-500 h-2.5 rounded-full" 
-            style={{ width: `${percentageSold}%` }}
-          ></div>
+        <div className="mb-3">
+          <div className="flex justify-between text-sm mb-1">
+            <span>{percentageSold}% Sold</span>
+            <span>{100 - percentageSold}% Remaining</span>
+          </div>
+          <ProgressBar percentage={percentageSold} />
         </div>
-        <p className="text-sm text-gray-600 mb-3">{percentageSold}% Sold</p>
         
-        {/* Countdown timer */}
-        <div className="flex justify-between text-sm text-gray-700 mb-4">
-          <div className="text-center">
-            <div className="font-bold">{timeRemaining.days}</div>
-            <div>Days</div>
-          </div>
-          <div className="text-center">
-            <div className="font-bold">{timeRemaining.hours}</div>
-            <div>Hours</div>
-          </div>
-          <div className="text-center">
-            <div className="font-bold">{timeRemaining.minutes}</div>
-            <div>Mins</div>
-          </div>
-          <div className="text-center">
-            <div className="font-bold">{timeRemaining.seconds}</div>
-            <div>Secs</div>
-          </div>
+        <div className="mb-4">
+          <div className="text-sm mb-1">Competition ends in:</div>
+          <CountdownTimer endDate={endDate} />
         </div>
         
         <button 
           onClick={onEnterClick}
-          className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded transition-colors"
+          className="btn btn-primary w-full touch-target"
+          aria-label={`Enter ${title} competition`}
         >
-          ENTER NOW
+          Enter Now
         </button>
       </div>
     </div>

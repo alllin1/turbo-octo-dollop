@@ -35,6 +35,8 @@ body {
     rgb(var(--background-start-rgb)),
     rgb(var(--background-end-rgb))
   );
+  -webkit-tap-highlight-color: transparent; /* Remove tap highlight on mobile */
+  overscroll-behavior-y: none; /* Prevent pull-to-refresh on mobile */
 }
 
 /* Responsive typography */
@@ -63,6 +65,7 @@ h3 {
 /* Mobile navigation */
 .mobile-nav {
   @apply fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 py-2 px-4 flex justify-around items-center md:hidden z-50;
+  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
 }
 
 /* Hide mobile nav on larger screens */
@@ -70,6 +73,33 @@ h3 {
   .mobile-nav {
     display: none;
   }
+}
+
+/* Touch target optimization */
+.touch-target {
+  @apply flex items-center justify-center;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 8px;
+}
+
+/* Swipe animations */
+.swipe-left {
+  animation: swipeLeft 0.3s ease-out;
+}
+
+.swipe-right {
+  animation: swipeRight 0.3s ease-out;
+}
+
+@keyframes swipeLeft {
+  from { transform: translateX(50px); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+@keyframes swipeRight {
+  from { transform: translateX(-50px); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
 }
 
 /* Responsive form elements */
@@ -82,14 +112,30 @@ h3 {
   @apply bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden transition-transform hover:shadow-lg;
 }
 
+/* Card hover effects - different for touch and non-touch */
+@media (hover: hover) {
+  .card:hover {
+    transform: translateY(-4px);
+  }
+}
+
+/* Active state for touch devices */
+@media (hover: none) {
+  .card:active {
+    transform: scale(0.98);
+  }
+}
+
 /* Responsive images */
 .responsive-image {
   @apply w-full h-auto object-cover;
+  aspect-ratio: 16/9;
 }
 
 /* Responsive buttons */
 .btn {
   @apply px-4 py-2 rounded-md font-medium transition-colors;
+  min-height: 44px; /* Minimum touch target size */
 }
 
 .btn-primary {
@@ -135,4 +181,59 @@ h3 {
 
 .show-on-mobile {
   @apply block md:hidden;
+}
+
+/* Skeleton loading animation */
+.skeleton {
+  @apply bg-gray-200 dark:bg-gray-700 animate-pulse rounded;
+}
+
+/* Mobile-specific optimizations */
+@media (max-width: 640px) {
+  .mobile-full-width {
+    margin-left: -1rem;
+    margin-right: -1rem;
+    width: calc(100% + 2rem);
+  }
+  
+  .mobile-stack {
+    @apply flex flex-col;
+  }
+  
+  .mobile-compact {
+    @apply py-2 px-3 text-sm;
+  }
+}
+
+/* Improved scrolling experience */
+.smooth-scroll {
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Horizontal scroll containers for mobile */
+.scroll-container {
+  @apply flex overflow-x-auto pb-4 gap-4 snap-x snap-mandatory;
+  scrollbar-width: none; /* Firefox */
+}
+
+.scroll-container::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Edge */
+}
+
+.scroll-item {
+  @apply flex-shrink-0 snap-start;
+  width: 85%;
+}
+
+@media (min-width: 640px) {
+  .scroll-item {
+    width: 45%;
+  }
+}
+
+@media (min-width: 768px) {
+  .scroll-item {
+    width: 30%;
+  }
 }
